@@ -94,4 +94,8 @@ router.delete("/songs/:id", async (req, res) => {
 });
 app.use("/api", router);
 
+// var port = process.env.PORT || 3000;
+// app.listen(port);
+//for listening on opened port of hosting service
+
 app.listen(3000);
