@@ -34,8 +34,71 @@ router.post("/user", async (req, res) => {
   }
 });
 
+//authenticate or login
+//post request -we use post because when you log in, you are creating what we will call a new "session"
+router.post("/auth", async (req, res) => {
+  if (!req.body.username || !req.body.password) {
+    res.sendStatus(400).json({ error: "Missing username or password" });
+    return;
+  }
+  //try to find the username in the database, then see if it matches with a username and password.
+  //wait finding a user
+  let user = await User.findOne({ username: req.body.username });
+  //we have to create this variable to grab the user data instead of using a callback (since they are note supported)
+
+  if (!user) {
+    res.sendStatus(401).json({ error: "Bad Username" });
+  }
+  //check to see if user's password  matches the request's password
+  else {
+    if (user.password != req.body.password) {
+      res.sendStatus(401).json({ error: "Bad Password" });
+    }
+    // successful login:
+    else {
+      //create a token that is encoded with the jwt library, and send back the username. this will be important later
+      //create, encode, and send back the token...
+      //we also will send back, as part of the token, that you are currently authorized
+      //we could also do this with a boolean or number value (i.e if auth = 0 you're not authorized; if auth =1 you are auth)
+
+      //user.username from (err, user), which is from req.body.username
+      username2 = user.username;
+      const token = jwt.encode({ username: user.username }, secret);
+      //for creating a token, you take a seed value and another value as "algorithmic input"
+      const auth = 1;
+
+      //respond with the tolen
+      res.json({
+        username2,
+        token: token,
+        auth: auth,
+        //we use the same names because we are binding const values to field names in json
+      });
+    }
+  }
+});
+
+//check the status of user using their valid token, check if it matches the fron tend token
+router.get("/status", async (req, res) => {
+  // if there are no request headers for the "x-auth" section
+  if (!req.headers["x-auth"]) {
+    return res.sendStatus(401).json({ error: "Missing X-Auth" });
+  }
+  //if x-auth contains the token (it should)
+  const token = req.headers["x-auth"];
+  try {
+    const decoded = jwt.decode(token, secret);
+
+    //send back all username and status fields to the user or front end
+    let users = User.find({}, "username status");
+    res.json(users);
+  } catch (ex) {
+    res.sendStatus(401).json({ error: "Invalid jwt token" });
+  }
+});
+
 // Get list of all songs in the database
-router.get("/songs", async function (req, res) {
+router.get("/songs", async (req, res) => {
   try {
     const songs = await Song.find();
     res.json(songs);
