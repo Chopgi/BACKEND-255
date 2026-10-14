@@ -16,7 +16,7 @@ const secret = "supersecret";
 //Creting a new user in db
 router.post("/user", async (req, res) => {
   if (!req.body.username || !req.body.password) {
-    res.sendStatus(400).json({ error: "Missing username or password" });
+    res.status(400).json({ error: "Missing username or password" });
   }
 
   const newUser = await new User({
@@ -30,7 +30,7 @@ router.post("/user", async (req, res) => {
     res.sendStatus(201); //created status
     console.log(newUser);
   } catch (ex) {
-    res.sendStatus(400).send(ex); //created status
+    res.status(400).send(ex); //created status
   }
 });
 
@@ -38,7 +38,7 @@ router.post("/user", async (req, res) => {
 //post request -we use post because when you log in, you are creating what we will call a new "session"
 router.post("/auth", async (req, res) => {
   if (!req.body.username || !req.body.password) {
-    res.sendStatus(400).json({ error: "Missing username or password" });
+    res.status(400).json({ error: "Missing username or password" });
     return;
   }
   //try to find the username in the database, then see if it matches with a username and password.
@@ -47,12 +47,12 @@ router.post("/auth", async (req, res) => {
   //we have to create this variable to grab the user data instead of using a callback (since they are note supported)
 
   if (!user) {
-    res.sendStatus(401).json({ error: "Bad Username" });
+    res.status(401).json({ error: "Bad Username" });
   }
   //check to see if user's password  matches the request's password
   else {
     if (user.password != req.body.password) {
-      res.sendStatus(401).json({ error: "Bad Password" });
+      res.status(401).json({ error: "Bad Password" });
     }
     // successful login:
     else {
@@ -67,7 +67,7 @@ router.post("/auth", async (req, res) => {
       //for creating a token, you take a seed value and another value as "algorithmic input"
       const auth = 1;
 
-      //respond with the tolen
+      //respond with the token
       res.json({
         username2,
         token: token,
@@ -82,7 +82,7 @@ router.post("/auth", async (req, res) => {
 router.get("/status", async (req, res) => {
   // if there are no request headers for the "x-auth" section
   if (!req.headers["x-auth"]) {
-    return res.sendStatus(401).json({ error: "Missing X-Auth" });
+    return res.status(401).json({ error: "Missing X-Auth" });
   }
   //if x-auth contains the token (it should)
   const token = req.headers["x-auth"];
@@ -90,10 +90,10 @@ router.get("/status", async (req, res) => {
     const decoded = jwt.decode(token, secret);
 
     //send back all username and status fields to the user or front end
-    let users = User.find({}, "username status");
+    let users = await User.find({}, "username status");
     res.json(users);
   } catch (ex) {
-    res.sendStatus(401).json({ error: "Invalid jwt token" });
+    res.status(401).json({ error: "Invalid jwt token" });
   }
 });
 
@@ -103,7 +103,7 @@ router.get("/songs", async (req, res) => {
     const songs = await Song.find();
     res.json(songs);
   } catch (ex) {
-    res.sendStatus(400).send(ex.message);
+    res.status(400).json({ error: ex.message });
   }
 });
 
@@ -113,7 +113,7 @@ router.get("/songs/:id", async (req, res) => {
     const song = await Song.findById(req.params.id);
     res.json(song);
   } catch (ex) {
-    res.sendStatus(400).send(ex.message);
+    res.status(400).json({ error: ex.message });
   }
 });
 
@@ -122,10 +122,10 @@ router.post("/songs", async (req, res) => {
   try {
     const song = new Song(req.body);
     await song.save();
-    res.sendStatus(201).json(song);
+    res.status(201).json(song);
     console.log(song);
   } catch (ex) {
-    res.sendStatus(400).send(ex.message);
+    res.status(400).json({ error: ex.message });
   }
 });
 
@@ -140,7 +140,7 @@ router.put("/songs/:id", async (req, res) => {
     console.log(song);
     res.sendStatus(204);
   } catch (ex) {
-    res.sendStatus(400).send(ex.message);
+    res.status(400).json({ error: ex.message });
   }
 });
 
@@ -152,7 +152,7 @@ router.delete("/songs/:id", async (req, res) => {
     await Song.deleteOne({ _id: song._id });
     res.sendStatus(204);
   } catch (ex) {
-    res.sendStatus(400).send(ex.message);
+    res.status(400).json({ error: ex.message });
   }
 });
 app.use("/api", router);
